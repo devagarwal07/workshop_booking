@@ -39,7 +39,19 @@ __credits__ = ["Mahesh Gudi", "Aditya P.", "Ankit Javalkar",
 # Helper functions
 
 def is_email_checked(user):
-    return user.profile.is_email_verified
+    """Return True if the related profile exists and email is verified.
+
+    Older user accounts (or superusers created via createsuperuser) may not
+    have an associated Profile row. Accessing user.profile would raise
+    Profile.DoesNotExist (translated to RelatedObjectDoesNotExist). We treat
+    missing profile as not verified instead of crashing.
+    """
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.profile.is_email_verified
+    except Profile.DoesNotExist:
+        return False
 
 
 def is_instructor(user):
@@ -70,27 +82,83 @@ def index(request):
 
 # TODO: Forgot password workflow
 def user_login(request):
-    """User Login"""
+    """User Login
+
+    Hardened against missing related Profile so a stale account (e.g. created
+    directly via createsuperuser or legacy DB import) does not raise a
+    RelatedObjectDoesNotExist. If profile is missing we inform the user and
+    direct them to (re)register so the Profile row is created.
+    """
     user = request.user
     if user.is_superuser:
         return redirect('/admin')
     if user.is_authenticated:
+        # If already logged in but NOT verified, send them to activation flow.
+        if not is_email_checked(user):
+            try:
+                # If profile exists but unverified -> activation page
+                user.profile  # noqa: B018 access for side effect / exception
+                return render(request, 'workshop_app/activation.html')
+            except Profile.DoesNotExist:
+                messages.warning(
+                    request,
+                    'Your account does not have a profile yet. Please complete registration.'
+                )
+                return redirect('workshop_app:register')
         return redirect(get_landing_page(user))
 
     if request.method == "POST":
         form = UserLoginForm(request.POST)
         if form.is_valid():
-            user = form.cleaned_data
-            if user.profile.is_email_verified:
+            user = form.cleaned_data  # authenticate() returned User instance
+            # Guard profile access
+            try:
+                profile = user.profile
+            except Profile.DoesNotExist:
+                # Let the user proceed to a profile completion page instead
+                login(request, user)
+                messages.warning(
+                    request,
+                    'Profile details required. Please complete your profile before continuing.'
+                )
+                return redirect('workshop_app:complete_profile')
+
+            if profile.is_email_verified:
                 login(request, user)
                 return redirect(get_landing_page(user))
             else:
                 return render(request, 'workshop_app/activation.html')
-        else:
-            return render(request, 'workshop_app/login.html', {"form": form})
-    else:
-        form = UserLoginForm()
+        # invalid form fallthrough
         return render(request, 'workshop_app/login.html', {"form": form})
+
+    form = UserLoginForm()
+    return render(request, 'workshop_app/login.html', {"form": form})
+
+
+@login_required
+def complete_profile(request):
+    """Allow an authenticated user without a Profile row to create one.
+
+    If a profile already exists, redirect to landing page.
+    """
+    try:
+        request.user.profile  # noqa: B018 ensure existence
+        return redirect(get_landing_page(request.user))
+    except Profile.DoesNotExist:
+        pass
+
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, user=request.user)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.is_email_verified = True  # Consider skipping activation for legacy recovery
+            profile.save()
+            messages.success(request, 'Profile created successfully.')
+            return redirect(get_landing_page(request.user))
+    else:
+        form = ProfileForm(user=request.user)
+    return render(request, 'workshop_app/complete_profile.html', {'form': form})
 
 
 def user_logout(request):
@@ -229,6 +297,13 @@ def accept_workshop(request, workshop_id):
                other_email=workshop.coordinator.email,
                phone_number=request.user.profile.phone_number
                )
+    # HTMX partial response: return updated accepted row + remove proposed row content
+    if request.headers.get('HX-Request'):
+        # Re-render a minimal accepted row (could expand later)
+        return render(request, 'workshop_app/partials/accepted_row.html', {
+            'workshop': workshop,
+            'today': timezone.now().date()
+        })
     return redirect(reverse('workshop_app:workshop_status_instructor'))
 
 
@@ -478,8 +553,13 @@ def view_own_profile(request):
     """User can view own profile """
     user = request.user
     if user.is_superuser:
-        return redirect("admin")
-    profile = user.profile
+        # Correct named URL for Django admin index
+        return redirect('admin:index')
+    try:
+        profile = user.profile
+    except Profile.DoesNotExist:
+        messages.warning(request, 'Please complete your profile first.')
+        return redirect('workshop_app:complete_profile')
     if request.method == 'POST':
         form = ProfileForm(request.POST, user=user, instance=profile)
         if form.is_valid():

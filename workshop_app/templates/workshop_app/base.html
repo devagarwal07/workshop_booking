@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 {% load static %}
 {% load custom_filters %}
 <head>
@@ -14,7 +14,9 @@
     <script src="{% static 'workshop_app/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'workshop_app/js/popper.min.js' %}"></script>
     <script src="{% static 'workshop_app/js/toastr.min.js' %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
 
@@ -23,6 +25,7 @@
 
     <link rel="stylesheet" href="{% static 'workshop_app/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'workshop_app/css/toastr.min.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'workshop_app/css/base.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'workshop_app/css/font-awesome.css' %}" type="text/css"/>
@@ -85,7 +88,8 @@
                     </a>
                 </li>
             </ul>
-            <div class="my-2 my-lg-0">
+            <div class="my-2 my-lg-0 d-flex align-items-center gap-2">
+                <button id="themeToggle" class="btn btn-outline-light btn-sm" type="button" aria-pressed="false" aria-label="Toggle dark mode">🌙</button>
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button"
@@ -116,12 +120,64 @@
     {% endblock %}
 </div>
 
+<div id="toast-region" aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index:2000; max-width: 360px"></div>
+
 <script>
-    {% if messages %}
-        {% for message in messages %}
-            toastr[{% if message.tags %} "{{ message.tags }}" {% else %} "info" {% endif %}]("{{ message }}");
-        {% endfor %}
-    {% endif %}
+// Theme toggle persistence
+const root = document.documentElement;
+const toggleBtn = document.getElementById('themeToggle');
+const storedTheme = localStorage.getItem('theme');
+if (storedTheme) {
+    root.setAttribute('data-theme', storedTheme);
+    if (storedTheme === 'dark') toggleBtn.setAttribute('aria-pressed', 'true');
+    toggleBtn.textContent = storedTheme === 'dark' ? '☀️' : '🌙';
+}
+toggleBtn?.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    toggleBtn.setAttribute('aria-pressed', next === 'dark');
+    toggleBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+// Accessible toast helper wrapping toastr
+function showToast(level, message) {
+    if (window.toastr) {
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            newestOnTop: true,
+            timeOut: 5000,
+            positionClass: 'toast-top-right'
+        };
+        toastr[level] ? toastr[level](message) : toastr.info(message);
+    } else {
+        const region = document.getElementById('toast-region');
+        if (!region) return;
+        const div = document.createElement('div');
+        div.className = 'alert alert-' + (level === 'error' ? 'danger' : level) + ' shadow-sm mb-2';
+        div.textContent = message;
+        region.appendChild(div);
+        setTimeout(()=> div.remove(), 6000);
+    }
+}
+
+{% if messages %}
+    {% for message in messages %}
+        showToast("{{ message.tags|default:'info' }}", "{{ message|escapejs }}");
+    {% endfor %}
+{% endif %}
+
+// Flatpickr enhancement (fallback to existing jQuery UI if present)
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.flatpickr) {
+        document.querySelectorAll('input[type="date"], .js-date').forEach(el => {
+            flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true });
+        });
+    }
+});
+
 </script>
 
 </body>

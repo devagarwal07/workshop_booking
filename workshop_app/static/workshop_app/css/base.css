@@ -1,6 +1,68 @@
 /**
  * Footer Styles
  */
+:root {
+    --color-bg: #ffffff;
+    --color-surface: #f8f9fa;
+    --color-text: #212529;
+    --color-text-muted: #6c757d;
+    --color-accent: #0d6efd;
+    --color-border: #dee2e6;
+    --color-success: #198754;
+    --color-warning: #ffc107;
+    --color-danger: #dc3545;
+}
+
+[data-theme="dark"] {
+    --color-bg: #121212;
+    --color-surface: #1e1e1e;
+    --color-text: #e2e2e2;
+    --color-text-muted: #a0a0a0;
+    --color-accent: #4dabf7;
+    --color-border: #333;
+    --color-success: #2ea26d;
+    --color-warning: #d6a436;
+    --color-danger: #f16a6a;
+}
+
+html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.bg-surface {
+    background: var(--color-surface) !important;
+}
+
+.text-muted { color: var(--color-text-muted) !important; }
+
+/* Override badge colors when dark mode active for contrast */
+[data-theme="dark"] .badge-success { background-color: var(--color-success); }
+[data-theme="dark"] .badge-warning { background-color: var(--color-warning); }
+[data-theme="dark"] .badge-danger { background-color: var(--color-danger); }
+
+/* Optional smooth theme transition */
+body { transition: background-color .25s, color .25s; }
+
+/* Cards and form controls (dark theme adjustments) */
+[data-theme="dark"] .card { background-color: #1e1e1e; border-color: var(--color-border); color: var(--color-text); }
+[data-theme="dark"] .card-header { background-color: #242424; border-bottom-color: var(--color-border); }
+[data-theme="dark"] .form-control { background-color: #242424; border-color: #3a3a3a; color: var(--color-text); }
+[data-theme="dark"] .form-control:focus { background-color: #262626; color: #fff; border-color: var(--color-accent); box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
+[data-theme="dark"] .form-control::placeholder { color: var(--color-text-muted); opacity: .7; }
+[data-theme="dark"] select.form-control option { background-color: #1e1e1e; color: var(--color-text); }
+[data-theme="dark"] .btn-info { background-color: #0d6efd; border-color: #0d6efd; }
+[data-theme="dark"] .btn-info:hover { background-color: #0b5ed7; border-color: #0b5ed7; }
+[data-theme="dark"] .btn-success { background-color: #198754; border-color: #198754; }
+[data-theme="dark"] .btn-success:hover { background-color: #157347; border-color: #146c43; }
+[data-theme="dark"] .table { color: var(--color-text); }
+[data-theme="dark"] .table thead th { border-color: var(--color-border); }
+[data-theme="dark"] .table td, [data-theme="dark"] .table th { border-color: #333; }
+[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255,255,255,.03); }
+[data-theme="dark"] hr { border-top-color: var(--color-border); }
+[data-theme="dark"] .jumbotron { background-color: #1e1e1e; border: 1px solid #2a2a2a; }
+
+
 .navbar {
     z-index: 1000;
 }

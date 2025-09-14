@@ -1,0 +1,15 @@
+{% load static %}
+<tbody id="accepted-row-{{ workshop.id }}">
+<tr>
+    <td><a href="{% url 'workshop_app:view_profile' workshop.coordinator.id %}">{{ workshop.coordinator.get_full_name }}</a></td>
+    <td>{{ workshop.coordinator.profile.institute }}</td>
+    <td>{{ workshop.workshop_type|capfirst }}</td>
+    <td>{{ workshop.date|date }}
+        {% if workshop.date > today %}
+            <span class="material-icons datepicker btn" title="Change date"
+                  onclick="changeDate('R,{{ workshop.date|safe }}, X')">event</span>
+        {% endif %}
+    </td>
+    <td><span class="badge badge-success">{{ workshop.get_status }}</span></td>
+</tr>
+</tbody>

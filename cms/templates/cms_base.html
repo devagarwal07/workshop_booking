@@ -1,59 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 {% load static %}
+{% load custom_filters %}
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{{ page.title|title }}</title>
+    <!-- Existing local Bootstrap (legacy) -->
     <link rel="stylesheet" href="{% static 'cms/css/bootstrap.min.css' %}">
-
-    <script src="{% static 'cms/js/jquery-3.4.1.slim.min.js' %}"></script>
-    <script src="{% static 'cms/js/popper.min.js' %}"></script>
-    {{ page.imports | safe }}
-    <script src="{% static 'cms/js/bootstrap.min.js' %}"></script>
+    <!-- Modern Bootstrap 5 (CDN) for improved mobile components; integrity can be added if hashed locally -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Custom base styles -->
     <link rel="stylesheet" href="{% static 'workshop_app/css/base.css' %}" type="text/css"/>
+    <!-- Responsive / accessibility enhancements -->
+    <link rel="stylesheet" href="{% static 'workshop_app/css/responsive.css' %}" type="text/css"/>
+    {{ page.imports | safe }}
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
+<a href="#main-content" class="visually-hidden-focusable skip-link">Skip to main content</a>
 
-<nav class=" navbar navbar-dark navbar navbar-expand-lg bg-dark fixed-top">
-    <a class="navbar-brand" href="/">FOSSEE Workshops</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav mr-auto">
-        </ul>
-        <div class="my-2 my-lg-0">
-            <ul class="navbar-nav mr-auto">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm" role="navigation" aria-label="Main navigation">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-semibold" href="/">FOSSEE Workshops</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if user.is_authenticated %}
+                    {# Core workshop navigation replicated from app base #}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:workshop_status_instructor' %}">Workshop Status</a></li>
+                    {% if not user|has_group:"instructor" %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:propose_workshop' %}">Propose Workshop</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:workshop_type_list' %}">Workshop Types</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'statistics_app:public' %}">Statistics</a></li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav align-items-lg-center gap-lg-1">
                 {% for nav in navs %}
-                    <li class="nav-item">
+                    <li class="nav-item{% if nav.subnavs %} dropdown{% endif %}">
                         {% if nav.subnavs %}
-                            <ul class="navbar-nav mr-auto">
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span
-                                            class="material-icons" style="vertical-align: middle">{{ nav.name }}</span>
-                                    </a>
-                                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                        {% for subnav in nav.subnavs %}
-                                        <a class="dropdown-item" href="{{ subnav.link }}">{{ subnav.name }}</a>
-                                        {% endfor %}
-                                    </div>
-                                </li>
+                            <a class="nav-link dropdown-toggle" href="#" id="dropdown-{{ forloop.counter }}" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">{{ nav.name }}</a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-{{ forloop.counter }}">
+                                {% for subnav in nav.subnavs %}
+                                    <li><a class="dropdown-item" href="{{ subnav.link }}">{{ subnav.name }}</a></li>
+                                {% endfor %}
                             </ul>
                         {% else %}
                             <a class="nav-link" href="{{ nav.link }}">{{ nav.name }}</a>
                         {% endif %}
                     </li>
                 {% endfor %}
-
+                {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:view_own_profile' %}">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:logout' %}">Logout</a></li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'workshop_app:register' %}">Register</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>
 </nav>
-<div class="base-content">
-{{ page.content | safe }}
-</div>
+
+<main id="main-content" class="flex-grow-1 pt-5 mt-3 container-lg base-content" tabindex="-1">
+    {% if user.is_authenticated %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+            <div>
+                <strong>Go to your dashboard:</strong>
+                {% if user|has_group:"instructor" %}
+                    Manage and accept workshops.
+                {% else %}
+                    Propose and track your workshops.
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                <a class="btn btn-sm btn-primary" href="{% url 'workshop_app:workshop_status_instructor' %}">Dashboard</a>
+                {% if not user|has_group:"instructor" %}
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'workshop_app:propose_workshop' %}">Propose</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    {{ page.content | safe }}
+</main>
+
+<footer class="mt-auto py-3 bg-light border-top small text-center" role="contentinfo">
+    <div class="container">
+        <p class="mb-1">&copy; <span id="currentYear"></span> FOSSEE Workshops</p>
+        <p class="mb-0"><a href="mailto:pythonsupport@fossee.in" class="text-decoration-none">Contact Support</a></p>
+    </div>
+</footer>
+
+<!-- Scripts: load modern Bootstrap first (requires Popper); keep legacy jQuery only if older scripts depend on it -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'cms/js/jquery-3.4.1.slim.min.js' %}" defer></script>
+<script src="{% static 'cms/js/popper.min.js' %}" defer></script>
+<script src="{% static 'cms/js/bootstrap.min.js' %}" defer></script>
+<script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
 </body>
 </html>

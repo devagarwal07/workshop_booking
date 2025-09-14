@@ -93,48 +93,53 @@
 </div>
 
 <!-- The Modal -->
-<div id="dialog" title="Workshops Statistics">
-    <canvas id="myChart"></canvas>
+<div id="dialog" title="Workshops Statistics" aria-live="polite">
+    <canvas id="myChart" role="img" aria-label="Workshops statistics chart"></canvas>
 </div>
 
 <script type="text/javascript">
-    var state_labels = {{ws_states|safe}};
-    var state_data = {{ws_count|safe}};
-    var type_labels = {{ws_type|safe}};
-    var type_data = {{ws_type_count|safe}};
-    var chart;
-    $("#state_graph").on("click", function() {
-        show_graph(state_labels, state_data, "State wise workshops");
-    });
-    $("#type_graph").on("click", function() {
-        show_graph(type_labels, type_data, "Type wise workshops");
-    });
+    (() => {
+        const stateLabels = {{ ws_states|safe }};
+        const stateData = {{ ws_count|safe }};
+        const typeLabels = {{ ws_type|safe }};
+        const typeData = {{ ws_type_count|safe }};
+        let chartInstance = null;
 
-    function show_graph(labels, data, graph_name, chart_name) {
-        var ctx = document.getElementById('myChart').getContext('2d');
-        if(chart) chart.destroy();
-        chart = new Chart(ctx, {
-            // The type of chart we want to create
-            type: 'bar',
+        function showGraph(labels, data, graphName) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        data,
+                        label: graphName,
+                        backgroundColor: 'rgba(13,110,253,0.6)',
+                        borderColor: 'rgba(13,110,253,1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        title: { display: true, text: graphName }
+                    }
+                }
+            });
+            $("#dialog").dialog({ width: 900, height: 500 });
+        }
 
-            // The data for our dataset
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    label: graph_name,
-                    backgroundColor: 'rgb(255, 99, 132)',
-                    borderColor: 'rgb(255, 99, 132)',
-                }]
-            },
-            // Configuration options go here
-            options: {}
-        });
-        $("#dialog").dialog({
-            width: 900,
-            height: 500
-        });
-    }
+        $("#state_graph").on('click', () => showGraph(stateLabels, stateData, 'State wise workshops'));
+        $("#type_graph").on('click', () => showGraph(typeLabels, typeData, 'Type wise workshops'));
+    })();
 </script>
 
 {% endblock %}
