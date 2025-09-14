@@ -154,39 +154,9 @@ Place your captured images in `docs/screenshots/`. Filenames below are suggested
 
 ### Core Before / After (Responsiveness & Navigation)
 ```
-docs/screenshots/
-    before_home_mobile.png
-    after_home_mobile.png
-    before_nav.png
-    after_nav.png
-    before_pagination.png
-    after_pagination.png
-```
 
-### New UI / Theming States
+All the screenshots are in the docs\screenshots
 ```
-docs/screenshots/
-    admin_login.png
-    cms_home_banner_light.png
-    cms_home_banner_dark.png
-    stats_filters_light.png
-    stats_filters_dark.png
-    dashboard_welcome_coordinator_light.png
-    dashboard_welcome_coordinator_dark.png
-    dashboard_welcome_instructor_light.png   # if instructor view differs
-    dashboard_welcome_instructor_dark.png
-```
-
-### Embedded Preview (will render once files exist)
-| Context | Light | Dark |
-|---------|-------|------|
-| CMS Home (banner) | ![CMS Home Light](docs/screenshots/cms_home_banner_light.png) | ![CMS Home Dark](docs/screenshots/cms_home_banner_dark.png) |
-| Statistics Filters | ![Stats Filters Light](docs/screenshots/stats_filters_light.png) | ![Stats Filters Dark](docs/screenshots/stats_filters_dark.png) |
-| Coordinator Dashboard | ![Coordinator Light](docs/screenshots/dashboard_welcome_coordinator_light.png) | ![Coordinator Dark](docs/screenshots/dashboard_welcome_coordinator_dark.png) |
-| Instructor Dashboard | ![Instructor Light](docs/screenshots/dashboard_welcome_instructor_light.png) | ![Instructor Dark](docs/screenshots/dashboard_welcome_instructor_dark.png) |
-| Admin Login | ![Admin Login](docs/screenshots/admin_login.png) | (N/A) |
-
-> Tip: If a dark variant isn’t needed, omit and leave cell blank.
 
 ### Capture Guidelines
 1. Clear test data for “empty state” screenshots (as shown in dashboard welcome).
